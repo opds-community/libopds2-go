@@ -4,7 +4,9 @@ This Go library is meant for applications that want to manipulate OPDS 1.x or 2.
 
 ## Using the app
 
-...
+The converter simply take an OPDS 1.X feed url for argument and print an OPDS 2.0 json feed.
+
+Example : ./libopds2-go http://www.feedbooks.com/store/recent.atom
 
 ## Features
 

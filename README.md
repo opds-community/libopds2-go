@@ -15,6 +15,6 @@ Example : ./libopds2-go http://www.feedbooks.com/store/recent.atom
 - [x] OPDS 2.0 model
 - [x] OPDS 1.x model
 - [x] Parsing OPDS 1.x
-- [x] Generating OPDS 2.x
-- [ ] Parsing OPDS 2.x
-- [ ] Helpers for OPDS 2.x
+- [x] Generating OPDS 2.0
+- [ ] Parsing OPDS 2.0
+- [ ] Helpers for OPDS 2.0

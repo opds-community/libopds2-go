@@ -1,0 +1,8 @@
+{
+	"ConfigVersion": "0.9",
+        "MainDirsExclude": "./vendor",
+        "Resources": {
+            "Include": "",
+	    "Exclude": "*_test.go"
+        }
+}

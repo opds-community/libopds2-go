@@ -7,8 +7,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/feedbooks/libopds-go/opds1"
-	"github.com/feedbooks/libopds-go/opds2"
+	"github.com/opds-community/libopds2-go/opds1"
+	"github.com/opds-community/libopds2-go/opds2"
 )
 
 func main() {

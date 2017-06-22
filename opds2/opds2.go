@@ -1,3 +1,5 @@
+// Package opds2 provide parsing and generation method for an OPDS2 feed
+// https://github.com/opds-community/opds-revision/blob/master/opds-2.0.md
 package opds2
 
 import (
@@ -124,7 +126,7 @@ type Contributor struct {
 	Links      []Link        `json:"links,omitempty"`
 }
 
-// Subject as based on EPUB 3.1 and WePpub
+// Subject as based on EPUB 3.1 and WebPub
 type Subject struct {
 	Name   string `json:"name"`
 	SortAs string `json:"sort_as,omitempty"`

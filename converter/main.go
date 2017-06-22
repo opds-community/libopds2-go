@@ -69,6 +69,18 @@ func fillOPDS2(feed *opds1.Feed, url string) opds2.Feed {
 			p.Metadata.Modified = entry.Updated
 			p.Metadata.PublicationDate = entry.Published
 			p.Metadata.Rights = entry.Rights
+			if len(entry.Series) > 0 {
+				for _, s := range entry.Series {
+					coll := opds2.Collection{}
+					coll.Name = s.Name
+					coll.Position = s.Position
+					coll.Links = append(coll.Links, opds2.Link{Href: s.URL})
+					if p.Metadata.BelongsTo == nil {
+						p.Metadata.BelongsTo = &opds2.BelongsTo{}
+					}
+					p.Metadata.BelongsTo.Series = append(p.Metadata.BelongsTo.Series, coll)
+				}
+			}
 			if entry.Publisher != "" {
 				c := opds2.Contributor{}
 				c.Name.SingleString = entry.Publisher

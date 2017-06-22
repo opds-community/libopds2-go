@@ -1,3 +1,5 @@
+// Package opds1 provide parsing and generation method for an OPDS1.X feed
+// https://github.com/opds-community/opds-revision/blob/master/opds-1.2.md
 package opds1
 
 import (
@@ -36,6 +38,7 @@ type Author struct {
 	URI  string `xml:"uri"`
 }
 
+// Entry an atom entry in the feed
 type Entry struct {
 	Title      string     `xml:"title"`
 	ID         string     `xml:"id"`
@@ -51,29 +54,44 @@ type Entry struct {
 	Links      []Link     `xml:"link,omitempty"`
 	Summary    Content    `xml:"summary"`
 	Content    Content    `xml:"content"`
+	Series     []Serie    `xml:"Series"`
 }
 
+// Content content tag in an entry, the type will be html or text
 type Content struct {
 	Content     string `xml:",cdata"`
 	ContentType string `xml:"type,attr"`
 }
 
+// Category represent the book category with scheme and term to machine
+// handling
 type Category struct {
 	Scheme string `xml:"scheme,attr"`
 	Term   string `xml:"term,attr"`
 	Label  string `xml:"label,attr"`
 }
 
+// Price represent the book price
 type Price struct {
 	CurrencyCode string  `xml:"currencycode,attr"`
 	Value        float64 `xml:",cdata"`
 }
 
+// IndirectAcquisition represent the link mostly for buying or borrowing
+// a book
 type IndirectAcquisition struct {
 	TypeAcquisition     string                `xml:"type,attr"`
 	IndirectAcquisition []IndirectAcquisition `xml:"indirectAcquisition"`
 }
 
+// Serie store serie information from schema.org
+type Serie struct {
+	Name     string  `xml:"name,attr"`
+	URL      string  `xml:"url,attr"`
+	Position float32 `xml:"position,attr"`
+}
+
+// ParseURL take a url in entry and parse the feed
 func ParseURL(url string) (*Feed, error) {
 	var feed Feed
 

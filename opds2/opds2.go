@@ -2,6 +2,10 @@ package opds2
 
 import (
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"os"
 	"time"
 )
 
@@ -49,17 +53,17 @@ type Group struct {
 
 // Link object used in collections and links
 type Link struct {
-	Href       string      `json:"href"`
-	TypeLink   string      `json:"type,omitempty"`
-	Rel        []string    `json:"rel,omitempty"`
-	Height     int         `json:"height,omitempty"`
-	Width      int         `json:"width,omitempty"`
-	Title      string      `json:"title,omitempty"`
-	Properties *Properties `json:"properties,omitempty"`
-	Duration   string      `json:"duration,omitempty"`
-	Templated  bool        `json:"templated,omitempty"`
-	Children   []Link      `json:"children,omitempty"`
-	Bitrate    int         `json:"bitrate,omitempty"`
+	Href       string        `json:"href"`
+	TypeLink   string        `json:"type,omitempty"`
+	Rel        StringOrArray `json:"rel,omitempty"`
+	Height     int           `json:"height,omitempty"`
+	Width      int           `json:"width,omitempty"`
+	Title      string        `json:"title,omitempty"`
+	Properties *Properties   `json:"properties,omitempty"`
+	Duration   string        `json:"duration,omitempty"`
+	Templated  bool          `json:"templated,omitempty"`
+	Children   []Link        `json:"children,omitempty"`
+	Bitrate    int           `json:"bitrate,omitempty"`
 }
 
 // Properties object use to link properties
@@ -100,7 +104,7 @@ type PublicationMetadata struct {
 	Contributor     []Contributor `json:"contributor,omitempty"`
 	Publisher       []Contributor `json:"publisher,omitempty"`
 	Imprint         []Contributor `json:"imprint,omitempty"`
-	Language        []string      `json:"language,omitempty"`
+	Language        StringOrArray `json:"language,omitempty"`
 	Modified        *time.Time    `json:"modified,omitempty"`
 	PublicationDate *time.Time    `json:"published,omitempty"`
 	Description     string        `json:"description,omitempty"`
@@ -150,6 +154,69 @@ type MultiLanguage struct {
 	MultiString  map[string]string
 }
 
+// StringOrArray is a array of string redifine for overriding json
+// marshalling and unmarshalling
+type StringOrArray []string
+
+// ParseURL parse the opds2 feed from an url
+func ParseURL(url string) (*Feed, error) {
+
+	request, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	res, errReq := http.DefaultClient.Do(request)
+	if errReq != nil {
+		return nil, errReq
+	}
+
+	buff, errRead := ioutil.ReadAll(res.Body)
+	if errRead != nil {
+		return nil, errRead
+	}
+
+	feed, errParse := ParseBuffer(buff)
+	if errParse != nil {
+		return &Feed{}, errParse
+	}
+
+	return feed, nil
+}
+
+// ParseFile parse opds2 from a file on filesystem
+func ParseFile(filePath string) (*Feed, error) {
+
+	f, err := os.Open(filePath)
+	if err != nil {
+		return &Feed{}, err
+	}
+	buff, errRead := ioutil.ReadAll(f)
+	if err != nil {
+		return &Feed{}, errRead
+	}
+
+	feed, errParse := ParseBuffer(buff)
+	if errParse != nil {
+		return &Feed{}, errParse
+	}
+
+	return feed, nil
+}
+
+// ParseBuffer parse opds2 feed from a buffer of byte usually get
+// from a file or url
+func ParseBuffer(buff []byte) (*Feed, error) {
+	var feed Feed
+
+	errParse := json.Unmarshal(buff, &feed)
+
+	if errParse != nil {
+		fmt.Println(errParse)
+	}
+
+	return &feed, nil
+}
+
 // MarshalJSON overwrite json marshalling for MultiLanguage
 // when we have an entry in the Multi fields we use it
 // otherwise we use the single string
@@ -167,6 +234,50 @@ func (m MultiLanguage) String() string {
 		}
 	}
 	return m.SingleString
+}
+
+// UnmarshalJSON overwrite json unmarshalling for MultiLanguage
+// when we have an entry in the Multi fields we use it
+// otherwise we use the single string
+func (m *MultiLanguage) UnmarshalJSON(data []byte) error {
+	var mParse map[string]string
+
+	if data[0] == '{' {
+		json.Unmarshal(data, &mParse)
+		m.MultiString = mParse
+	} else {
+		m.SingleString = string(data)
+	}
+
+	return nil
+}
+
+// MarshalJSON overwrite json marshalling for handling string or array
+func (r StringOrArray) MarshalJSON() ([]byte, error) {
+	if len(r) == 1 {
+		return json.Marshal(r[0])
+	}
+	return json.Marshal(r)
+}
+
+// UnmarshalJSON overwrite json unmarshalling for Rel for handling
+// when we have a array of a string
+func (r *StringOrArray) UnmarshalJSON(data []byte) error {
+	var relAr []string
+
+	if data[0] == '[' {
+		err := json.Unmarshal(data, &relAr)
+		if err != nil {
+			return err
+		}
+		for _, ra := range relAr {
+			*r = append(*r, ra)
+		}
+	} else {
+		*r = append(*r, string(data))
+	}
+
+	return nil
 }
 
 // AddFacet add link to facet handler multiple add

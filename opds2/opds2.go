@@ -4,10 +4,6 @@ package opds2
 
 import (
 	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"net/http"
-	"os"
 	"time"
 )
 
@@ -160,65 +156,6 @@ type MultiLanguage struct {
 // marshalling and unmarshalling
 type StringOrArray []string
 
-// ParseURL parse the opds2 feed from an url
-func ParseURL(url string) (*Feed, error) {
-
-	request, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return nil, err
-	}
-	res, errReq := http.DefaultClient.Do(request)
-	if errReq != nil {
-		return nil, errReq
-	}
-
-	buff, errRead := ioutil.ReadAll(res.Body)
-	if errRead != nil {
-		return nil, errRead
-	}
-
-	feed, errParse := ParseBuffer(buff)
-	if errParse != nil {
-		return &Feed{}, errParse
-	}
-
-	return feed, nil
-}
-
-// ParseFile parse opds2 from a file on filesystem
-func ParseFile(filePath string) (*Feed, error) {
-
-	f, err := os.Open(filePath)
-	if err != nil {
-		return &Feed{}, err
-	}
-	buff, errRead := ioutil.ReadAll(f)
-	if err != nil {
-		return &Feed{}, errRead
-	}
-
-	feed, errParse := ParseBuffer(buff)
-	if errParse != nil {
-		return &Feed{}, errParse
-	}
-
-	return feed, nil
-}
-
-// ParseBuffer parse opds2 feed from a buffer of byte usually get
-// from a file or url
-func ParseBuffer(buff []byte) (*Feed, error) {
-	var feed Feed
-
-	errParse := json.Unmarshal(buff, &feed)
-
-	if errParse != nil {
-		fmt.Println(errParse)
-	}
-
-	return &feed, nil
-}
-
 // MarshalJSON overwrite json marshalling for MultiLanguage
 // when we have an entry in the Multi fields we use it
 // otherwise we use the single string
@@ -238,102 +175,12 @@ func (m MultiLanguage) String() string {
 	return m.SingleString
 }
 
-// UnmarshalJSON overwrite json unmarshalling for MultiLanguage
-// when we have an entry in the Multi fields we use it
-// otherwise we use the single string
-func (m *MultiLanguage) UnmarshalJSON(data []byte) error {
-	var mParse map[string]string
-
-	if data[0] == '{' {
-		json.Unmarshal(data, &mParse)
-		m.MultiString = mParse
-	} else {
-		m.SingleString = string(data)
-	}
-
-	return nil
-}
-
 // MarshalJSON overwrite json marshalling for handling string or array
 func (r StringOrArray) MarshalJSON() ([]byte, error) {
 	if len(r) == 1 {
 		return json.Marshal(r[0])
 	}
 	return json.Marshal(r)
-}
-
-// UnmarshalJSON overwrite json unmarshalling for Rel for handling
-// when we have a array of a string
-func (r *StringOrArray) UnmarshalJSON(data []byte) error {
-	var relAr []string
-
-	if data[0] == '[' {
-		err := json.Unmarshal(data, &relAr)
-		if err != nil {
-			return err
-		}
-		for _, ra := range relAr {
-			*r = append(*r, ra)
-		}
-	} else {
-		*r = append(*r, string(data))
-	}
-
-	return nil
-}
-
-// AddFacet add link to facet handler multiple add
-func (feed *Feed) AddFacet(link Link, group string) {
-	var facet Facet
-
-	for i, f := range feed.Facets {
-		if f.Metadata.Title == group {
-			feed.Facets[i].Links = append(feed.Facets[i].Links, link)
-			return
-		}
-	}
-
-	facet.Metadata.Title = group
-	facet.Links = append(facet.Links, link)
-	feed.Facets = append(feed.Facets, facet)
-}
-
-// AddPublicationInGroup smart adding of publication in Group
-func (feed *Feed) AddPublicationInGroup(publication Publication, collLink Link) {
-	var group Group
-
-	for i, g := range feed.Groups {
-		for _, l := range g.Links {
-			if l.Href == collLink.Href {
-				feed.Groups[i].Publications = append(feed.Groups[i].Publications, publication)
-				return
-			}
-		}
-	}
-
-	group.Metadata.Title = collLink.Title
-	group.Publications = append(group.Publications, publication)
-	group.Links = append(group.Links, Link{Rel: []string{"self"}, Title: collLink.Title, Href: collLink.Href})
-	feed.Groups = append(feed.Groups, group)
-}
-
-// AddNavigationInGroup add a navigation link to Group
-func (feed *Feed) AddNavigationInGroup(link Link, collLink Link) {
-	var group Group
-
-	for i, g := range feed.Groups {
-		for _, l := range g.Links {
-			if l.Href == collLink.Href {
-				feed.Groups[i].Navigation = append(feed.Groups[i].Navigation, link)
-				return
-			}
-		}
-	}
-
-	group.Metadata.Title = collLink.Title
-	group.Navigation = append(group.Navigation, link)
-	group.Links = append(group.Links, Link{Rel: []string{"self"}, Title: collLink.Title, Href: collLink.Href})
-	feed.Groups = append(feed.Groups, group)
 }
 
 func (publication *Publication) findFirstLinkByRel(rel string) Link {
@@ -347,4 +194,15 @@ func (publication *Publication) findFirstLinkByRel(rel string) Link {
 	}
 
 	return Link{}
+}
+
+// New create a new feed structure
+func New(title string) Feed {
+	var feed Feed
+
+	feed.Metadata.Title = title
+	t := time.Now()
+	feed.Metadata.Modified = &t
+
+	return feed
 }

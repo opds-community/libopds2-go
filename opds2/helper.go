@@ -89,6 +89,10 @@ func (publication *Publication) AddSerie(name string, position float32, href str
 		l.TypeLink = typeLink
 	}
 
+	if href != "" {
+		l.Href = href
+	}
+
 	if l.Href != "" {
 		c.Links = append(c.Links, l)
 	}
@@ -105,6 +109,10 @@ func (publication *Publication) AddPublisher(name string, href string, typeLink 
 
 	if typeLink != "" {
 		l.TypeLink = typeLink
+	}
+
+	if href != "" {
+		l.Href = href
 	}
 
 	if l.Href != "" {

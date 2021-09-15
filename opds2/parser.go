@@ -510,29 +510,34 @@ func parseContributors(data interface{}) []Contributor {
 func parseContributor(data interface{}) Contributor {
 	var c Contributor
 
-	info := data.(map[string]interface{})
-	for k, v := range info {
-		switch k {
-		case "name":
-			switch v.(type) {
-			case string:
-				c.Name.SingleString = v.(string)
-			case map[string]interface{}:
-				infoN := v.(map[string]interface{})
-				c.Name.MultiString = make(map[string]string)
-				for kn, vn := range infoN {
-					c.Name.MultiString[kn] = vn.(string)
+	switch data.(type) {
+	case string:
+		c.Name.SingleString = data.(string)
+	default:
+		info := data.(map[string]interface{})
+		for k, v := range info {
+			switch k {
+			case "name":
+				switch v.(type) {
+				case string:
+					c.Name.SingleString = v.(string)
+				case map[string]interface{}:
+					infoN := v.(map[string]interface{})
+					c.Name.MultiString = make(map[string]string)
+					for kn, vn := range infoN {
+						c.Name.MultiString[kn] = vn.(string)
+					}
 				}
+			case "identifier":
+				c.Identifier = v.(string)
+			case "sort_as":
+				c.SortAs = v.(string)
+			case "role":
+				c.Role = v.(string)
+			case "links":
+				l := parseLink(v)
+				c.Links = append(c.Links, l)
 			}
-		case "identifier":
-			c.Identifier = v.(string)
-		case "sort_as":
-			c.SortAs = v.(string)
-		case "role":
-			c.Role = v.(string)
-		case "links":
-			l := parseLink(v)
-			c.Links = append(c.Links, l)
 		}
 	}
 
